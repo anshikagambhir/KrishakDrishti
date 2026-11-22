@@ -1,3 +1,17 @@
+import {
+  UserProfile,
+  Farm,
+  Field,
+  IoTDevice,
+  DeviceTelemetryReading,
+  CropDiagnosis,
+  WeatherCondition,
+  MandiPriceRecord,
+  CropMarketplaceListing,
+  AlertNotification,
+  FPOCase,
+} from '../types/index';
+
 // Always use same-origin /api and /uploads routes. Next.js proxies to BACKEND_URL
 // on the server, so browser credentials / network do not need a CORS exception.
 export const API_BASE = '';
@@ -27,47 +41,48 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       throw new Error(errBody.error || errBody.message || `Request failed with status ${res.status}`);
     }
     return await res.json();
-  } catch (err: any) {
-    console.error(`[API] Error calling ${endpoint}:`, err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[API] Error calling ${endpoint}:`, message);
     throw err;
   }
 }
 
 export const api = {
   // Profiles & Authentication
-  getProfile: (id: string = 'usr-farmer-001') => request<{ profile: any }>(`/api/auth/profile?id=${id}`),
-  updateProfile: (id: string, updates: any) =>
-    request<{ profile: any; message: string }>('/api/auth/profile', {
+  getProfile: (id: string = 'usr-farmer-001') => request<{ profile: UserProfile }>(`/api/auth/profile?id=${id}`),
+  updateProfile: (id: string, updates: Partial<UserProfile>) =>
+    request<{ profile: UserProfile; message: string }>('/api/auth/profile', {
       method: 'PATCH',
       body: JSON.stringify({ id, ...updates }),
     }),
-  getUsers: () => request<{ profiles: any[] }>('/api/auth/users'),
+  getUsers: () => request<{ profiles: UserProfile[] }>('/api/auth/users'),
   login: (credentials: { phoneNumber?: string; profileId?: string }) =>
-    request<{ profile: any; token: string; message: string }>('/api/auth/login', {
+    request<{ profile: UserProfile; token: string; message: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
   signup: (data: { fullName: string; phoneNumber: string; preferredLanguage?: string; role?: string; fpoId?: string }) =>
-    request<{ profile: any; token: string; message: string }>('/api/auth/signup', {
+    request<{ profile: UserProfile; token: string; message: string }>('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   switchRole: (profileId: string) =>
-    request<{ profile: any; message: string }>('/api/auth/switch-role', {
+    request<{ profile: UserProfile; message: string }>('/api/auth/switch-role', {
       method: 'POST',
       body: JSON.stringify({ profileId }),
     }),
 
   // Farms & Fields
-  getFarms: (farmerId?: string) => request<{ farms: any[] }>(`/api/farms${farmerId ? `?farmerId=${farmerId}` : ''}`),
-  getFarm: (id: string) => request<{ farm: any; fields: any[] }>(`/api/farms/${id}`),
-  createFarm: (farm: any) =>
-    request<{ farm: any; message: string }>('/api/farms', {
+  getFarms: (farmerId?: string) => request<{ farms: Farm[] }>(`/api/farms${farmerId ? `?farmerId=${farmerId}` : ''}`),
+  getFarm: (id: string) => request<{ farm: Farm; fields: Field[] }>(`/api/farms/${id}`),
+  createFarm: (farm: Partial<Farm>) =>
+    request<{ farm: Farm; message: string }>('/api/farms', {
       method: 'POST',
       body: JSON.stringify(farm),
     }),
-  updateFarm: (id: string, updates: any) =>
-    request<{ farm: any; message: string }>(`/api/farms/${id}`, {
+  updateFarm: (id: string, updates: Partial<Farm>) =>
+    request<{ farm: Farm; message: string }>(`/api/farms/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
@@ -79,16 +94,16 @@ export const api = {
     const params = new URLSearchParams();
     if (farmId) params.append('farmId', farmId);
     if (farmerId) params.append('farmerId', farmerId);
-    return request<{ fields: any[] }>(`/api/fields?${params.toString()}`);
+    return request<{ fields: Field[] }>(`/api/fields?${params.toString()}`);
   },
-  getField: (id: string) => request<{ field: any }>(`/api/fields/${id}`),
+  getField: (id: string) => request<{ field: Field }>(`/api/fields/${id}`),
   createField: (field: any) =>
-    request<{ field: any; message: string }>('/api/fields', {
+    request<{ field: Field; message: string }>('/api/fields', {
       method: 'POST',
       body: JSON.stringify(field),
     }),
   updateField: (id: string, updates: any) =>
-    request<{ field: any; message: string }>(`/api/fields/${id}`, {
+    request<{ field: Field; message: string }>(`/api/fields/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
@@ -96,9 +111,9 @@ export const api = {
     request<{ message: string }>(`/api/fields/${id}`, {
       method: 'DELETE',
     }),
-  getFieldOverlays: (fieldId: string) => request<{ overlays: any[] }>(`/api/fields/${fieldId}/overlays`),
+  getFieldOverlays: (fieldId: string) => request<{ overlays: Array<{ id: string; name: string; url: string }> }>(`/api/fields/${fieldId}/overlays`),
   saveFieldOverlay: (fieldId: string, overlay: any) =>
-    request<{ overlay: any; message: string }>(`/api/fields/${fieldId}/overlays`, {
+    request<{ overlay: unknown; message: string }>(`/api/fields/${fieldId}/overlays`, {
       method: 'POST',
       body: JSON.stringify(overlay),
     }),
@@ -113,13 +128,13 @@ export const api = {
     }
     if (location) params.append('location', location);
     if (farmerId) params.append('farmerId', farmerId);
-    return request<{ weather: any; activeAlerts: any[]; newTriggeredAlertsCount: number; farmCoordinates: any }>(
+    return request<{ weather: WeatherCondition; activeAlerts: AlertNotification[]; newTriggeredAlertsCount: number; farmCoordinates: { lat: number; lng: number } }>(
       `/api/weather?${params.toString()}`
     );
   },
-  getAlerts: (farmerId: string = 'usr-farmer-001') => request<{ alerts: any[] }>(`/api/alerts?farmerId=${farmerId}`),
+  getAlerts: (farmerId: string = 'usr-farmer-001') => request<{ alerts: AlertNotification[] }>(`/api/alerts?farmerId=${farmerId}`),
   acknowledgeAlert: (id: string, farmerId: string = 'usr-farmer-001') =>
-    request<{ alert: any; message: string }>(`/api/alerts/${id}/read`, {
+    request<{ alert: AlertNotification; message: string }>(`/api/alerts/${id}/read`, {
       method: 'PATCH',
       body: JSON.stringify({ farmerId }),
     }),
@@ -131,18 +146,18 @@ export const api = {
     if (filters?.state && filters.state !== 'All') params.append('state', filters.state);
     if (filters?.market && filters.market !== 'All') params.append('market', filters.market);
     return request<{
-      records: any[];
+      records: MandiPriceRecord[];
       total: number;
       sourceAttribution: string;
       isLiveFeed: boolean;
-      availableFilters: any;
+      availableFilters: { commodities: string[]; states: string[]; markets: string[] };
       dataStatus?: string;
       retrievalTime?: string;
       blockerDetails?: string;
     }>(`/api/mandi?${params.toString()}`);
   },
   compareMandiMarkets: (commodity: string = 'Onion') =>
-    request<{ commodity: string; comparison: any[]; sourceAttribution: string; isLiveFeed: boolean }>(
+    request<{ commodity: string; comparison: Array<{ market: string; state: string; modalPrice: number; variancePct: number }>; sourceAttribution: string; isLiveFeed: boolean }>(
       `/api/mandi/compare?commodity=${encodeURIComponent(commodity)}`
     ),
 
@@ -154,7 +169,7 @@ export const api = {
     if (filters?.type && filters.type !== 'All') params.append('type', filters.type);
     if (filters?.status) params.append('status', filters.status);
     return request<{
-      listings: any[];
+      listings: CropMarketplaceListing[];
       totalCount: number;
       metrics: {
         totalQuintalsAvailable: number;
@@ -165,8 +180,8 @@ export const api = {
       retrievalTime: string;
     }>(`/api/marketplace/listings?${params.toString()}`);
   },
-  createMarketplaceListing: (payload: any) =>
-    request<{ message: string; listing: any }>('/api/marketplace/listings', {
+  createMarketplaceListing: (payload: Partial<CropMarketplaceListing>) =>
+    request<{ message: string; listing: CropMarketplaceListing }>('/api/marketplace/listings', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
@@ -180,9 +195,9 @@ export const api = {
     ),
 
   // IoT
-  getDevices: (farmerId?: string) => request<{ devices: any[] }>(`/api/iot/devices${farmerId ? `?farmerId=${farmerId}` : ''}`),
+  getDevices: (farmerId?: string) => request<{ devices: IoTDevice[] }>(`/api/iot/devices${farmerId ? `?farmerId=${farmerId}` : ''}`),
   registerDevice: (device: any) =>
-    request<{ device: any; message: string }>('/api/iot/devices', {
+    request<{ device: IoTDevice; message: string }>('/api/iot/devices', {
       method: 'POST',
       body: JSON.stringify(device),
     }),
@@ -191,10 +206,10 @@ export const api = {
     if (deviceId) params.append('deviceId', deviceId);
     if (fieldId) params.append('fieldId', fieldId);
     params.append('limit', limit.toString());
-    return request<{ readings: any[] }>(`/api/iot/telemetry?${params.toString()}`);
+    return request<{ readings: DeviceTelemetryReading[] }>(`/api/iot/telemetry?${params.toString()}`);
   },
   triggerSimulatorTick: () =>
-    request<{ message: string; readingsGenerated: number; readings: any[]; pumpActive: boolean }>('/api/iot/simulator/tick', {
+    request<{ message: string; readingsGenerated: number; readings: DeviceTelemetryReading[]; pumpActive: boolean }>('/api/iot/simulator/tick', {
       method: 'POST',
     }),
   getPumpStatus: () =>
@@ -208,7 +223,7 @@ export const api = {
       }
     ),
   injectSimulatorScenario: (scenario: 'drought' | 'optimal' | 'waterlogging' | 'heatwave') =>
-    request<{ success: boolean; scenario: string; readings: any[]; pumpActive: boolean; message: string }>(
+    request<{ success: boolean; scenario: string; readings: DeviceTelemetryReading[]; pumpActive: boolean; message: string }>(
       '/api/iot/simulator/scenario',
       {
         method: 'POST',
@@ -221,9 +236,9 @@ export const api = {
     const params = new URLSearchParams();
     if (fieldId) params.append('fieldId', fieldId);
     if (farmerId) params.append('farmerId', farmerId);
-    return request<{ diagnoses: any[] }>(`/api/diagnoses?${params.toString()}`);
+    return request<{ diagnoses: CropDiagnosis[] }>(`/api/diagnoses?${params.toString()}`);
   },
-  analyzeCropHealth: async (formData: FormData) => {
+  analyzeCropHealth: async (formData: FormData): Promise<{ diagnosis: CropDiagnosis; message: string }> => {
     const res = await fetch(`${API_BASE}/api/diagnoses/analyze`, {
       method: 'POST',
       body: formData,
@@ -237,20 +252,20 @@ export const api = {
 
   // AI Assistant Chatbot
   chatWithAssistant: (message: string, farmerId: string = 'usr-farmer-001', preferredLanguage: string = 'hi') =>
-    request<{ reply: string; suggestedActions: string[]; linksToScreens: any[]; timestamp: string }>('/api/ai/chat', {
+    request<{ reply: string; suggestedActions: string[]; linksToScreens: Array<{ label: string; href: string }>; timestamp: string }>('/api/ai/chat', {
       method: 'POST',
       body: JSON.stringify({ message, farmerId, preferredLanguage }),
     }),
 
   // FPO Coordinator Workspace
-  getFPOMembers: () => request<{ members: any[] }>('/api/fpo/members'),
-  getFPOCases: () => request<{ cases: any[] }>('/api/fpo/cases'),
-  assignFPOCase: (caseId: string, updates: any) =>
-    request<{ case: any; message: string }>(`/api/fpo/cases/${caseId}/assign`, {
+  getFPOMembers: () => request<{ members: UserProfile[] }>('/api/fpo/members'),
+  getFPOCases: () => request<{ cases: FPOCase[] }>('/api/fpo/cases'),
+  assignFPOCase: (caseId: string, updates: { assignedExpertName: string; status?: string; expertNotes?: string }) =>
+    request<{ case: FPOCase; message: string }>(`/api/fpo/cases/${caseId}/assign`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
-  getFPOMetrics: () => request<any>('/api/fpo/metrics'),
+  getFPOMetrics: () => request<{ totalMembers: number; totalAcreage: number; activeCases: number; resolvedCases: number }>('/api/fpo/metrics'),
 
   // Voice Hotline / IVR Simulator
   simulateVoiceCall: (payload: { action: string; callerNumber?: string; digit?: string; spokenText?: string; language?: string; sessionId?: string }) =>
@@ -261,7 +276,13 @@ export const api = {
 
   // WhatsApp Webhook Simulator
   simulateWhatsApp: (payload: { senderNumber?: string; text?: string; hasImage?: boolean; imageUrl?: string }) =>
-    request<any>('/api/webhooks/whatsapp/simulate', {
+    request<{
+      success: boolean;
+      sentMessage?: string;
+      responseMessages?: string[];
+      replySent?: string;
+      [key: string]: any;
+    }>('/api/webhooks/whatsapp/simulate', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

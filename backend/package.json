@@ -15,7 +15,10 @@
     "test:crop": "tsx --test src/tests/cropHealthVerification.test.ts",
     "test:workflow": "tsx --test src/tests/workflow.test.ts",
     "smoke": "npm run build && node scripts/smoke-api.mjs",
-    "test:all": "tsx --test src/tests/*.test.ts"
+    "test:all": "tsx --test --test-concurrency=1 src/tests/*.test.ts",
+    "test:coverage": "tsx --test --experimental-test-coverage --test-concurrency=1 src/tests/*.test.ts",
+    "test:security": "tsx --test src/tests/securityAndAuth.test.ts",
+    "test:marketplace": "tsx --test src/tests/marketplaceAndIot.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

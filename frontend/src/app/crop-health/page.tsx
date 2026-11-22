@@ -33,34 +33,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api, resolveImageUrl } from '../../lib/api';
-
-interface CropDiagnosis {
-  id: string;
-  fieldId: string;
-  farmerId: string;
-  imageUrl: string;
-  source: 'web_upload' | 'esp32_cam' | 'whatsapp' | 'drone' | 'preset_sample';
-  cropDetected: string;
-  primaryIssue: string;
-  severity: 'low' | 'moderate' | 'high' | 'severe';
-  confidencePct: number;
-  visibleEvidence: string;
-  actionableSteps: string[];
-  preventativeMeasures: string[];
-  disclaimer: string;
-  escalationNeeded: boolean;
-  escalationNotes?: string;
-  followUpQuestions: string[];
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  provider?: 'gemini' | 'offline_pathology_engine' | 'mistral';
-  dataStatus?: 'live' | 'fallback' | 'cached';
-  modelUsed?: string;
-  fallbackReason?: string;
-  createdAt: string;
-}
+import { CropDiagnosis } from '../../types/index';
 
 function getDiagnosisCategory(diagnosis: CropDiagnosis | null): 'healthy' | 'monitor' | 'at_risk' {
   if (!diagnosis) return 'healthy';
@@ -1056,14 +1029,14 @@ export default function CropHealthPage() {
             )}
 
             {/* Agronomic Follow-up Questions for Farmer */}
-            {activeDiagnosis.followUpQuestions?.length > 0 && (
+            {Boolean(activeDiagnosis.followUpQuestions && activeDiagnosis.followUpQuestions.length > 0) && (
               <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2">
                 <div className="flex items-center space-x-2 text-teal-900 font-bold text-xs">
                   <HelpCircle className="w-4 h-4 text-teal-600 shrink-0" />
                   <span>Agronomic Follow-Up Questions (Check Your Field Parcel)</span>
                 </div>
                 <ul className="list-disc list-inside text-xs text-teal-800 space-y-1 pl-1">
-                  {activeDiagnosis.followUpQuestions.map((q: string, idx: number) => (
+                  {activeDiagnosis.followUpQuestions?.map((q: string, idx: number) => (
                     <li key={idx}>{q}</li>
                   ))}
                 </ul>

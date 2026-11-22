@@ -73,6 +73,7 @@ export default function Navbar() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search farms, crops, alerts, mandi prices..."
+            aria-label="Search agricultural data, crops, alerts, and mandi prices"
             className="w-full pl-9 pr-8 py-1.5 rounded-lg text-xs bg-[#F9FAF6] border border-[#E2E8DC] text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#1B4D3E] focus:border-[#1B4D3E] transition-all"
           />
           <kbd className="hidden sm:inline-block absolute right-2.5 top-2 text-[10px] text-stone-400 font-mono">
@@ -102,6 +103,9 @@ export default function Navbar() {
             }}
             className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-white border border-[#E2E8DC] hover:border-stone-300 transition-colors shadow-2xs"
             title="Change Indian Regional Language"
+            aria-label="Change Indian regional language"
+            aria-expanded={isLangDropdownOpen}
+            aria-haspopup="listbox"
           >
             <span className="text-xs" role="img" aria-label="India flag">🇮🇳</span>
             <span className="font-semibold text-stone-800">{activeLang.nativeName}</span>
@@ -110,7 +114,11 @@ export default function Navbar() {
           </button>
 
           {isLangDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 max-h-96 overflow-y-auto bg-white border border-[#E2E8DC] rounded-xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95">
+            <div
+              role="listbox"
+              aria-label="Official Indian Languages"
+              className="absolute right-0 mt-2 w-72 max-h-96 overflow-y-auto bg-white border border-[#E2E8DC] rounded-xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95"
+            >
               <div className="p-2 border-b border-stone-100">
                 <div className="text-xs font-bold text-stone-900">Official Indian Languages (22)</div>
                 <div className="text-[10px] text-stone-500">Unicode-safe localization with regional phonetic TTS</div>
@@ -154,6 +162,8 @@ export default function Navbar() {
             }}
             className="w-8 h-8 rounded-lg bg-white border border-[#E2E8DC] text-stone-600 hover:text-stone-900 hover:border-stone-300 flex items-center justify-center transition-colors relative shadow-2xs"
             title="Active Weather & Risk Notifications"
+            aria-label={`Active risk notifications (${alerts.length} active)`}
+            aria-expanded={isAlertsOpen}
           >
             <Bell className="w-3.5 h-3.5" />
             {alerts.length > 0 && (
@@ -164,7 +174,11 @@ export default function Navbar() {
           </button>
 
           {isAlertsOpen && (
-            <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white border border-[#E2E8DC] rounded-xl shadow-xl p-3 z-50 animate-in fade-in">
+            <div
+              role="region"
+              aria-label="Active risk advisories panel"
+              className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white border border-[#E2E8DC] rounded-xl shadow-xl p-3 z-50 animate-in fade-in"
+            >
               <div className="flex items-center justify-between pb-2 border-b border-stone-100">
                 <span className="text-xs font-bold text-stone-900">Active Advisories ({alerts.length})</span>
                 <Link
@@ -214,6 +228,9 @@ export default function Navbar() {
               setIsAlertsOpen(false);
             }}
             className="flex items-center space-x-2 p-1 rounded-lg hover:bg-stone-50 transition-colors"
+            aria-label={`User account menu for ${profile?.fullName || 'Farmer'}`}
+            aria-expanded={isProfileDropdownOpen}
+            aria-haspopup="menu"
           >
             <div
               className="w-7 h-7 rounded-full overflow-hidden border border-[#CBD5C0] bg-cover bg-center shrink-0"

@@ -11,10 +11,13 @@
     "build:frontend": "npm --prefix frontend run build",
     "start:backend": "npm --prefix backend start",
     "start:frontend": "npm --prefix frontend start",
-    "test:backend": "npm --prefix backend test",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm --prefix backend run test:all",
+    "test:frontend": "npm --prefix frontend run test",
+    "test:all": "npm run test:backend && npm run test:frontend",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
-    "check": "npm run build:backend && npm --prefix backend run smoke && npm --prefix frontend run typecheck && npm run verify:images && npm run build:frontend",
+    "check": "npm run build:backend && npm --prefix backend run smoke && npm run test:backend && npm run test:frontend && npm --prefix frontend run typecheck && npm run verify:images && npm run build:frontend",
     "verify:images": "node scripts/verify-images.mjs"
   }
 }

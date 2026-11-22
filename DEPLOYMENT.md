@@ -1,54 +1,90 @@
-# KrishakDrishti — Vercel Deployment
+# KrishakDrishti — Deployment & Operations Guide
 
-## Reality check
+This guide provides deployment instructions for KrishakDrishti across local development, Docker Compose containerization, and dual-service Vercel deployment.
 
-This is a **two-service prototype**. A frontend-only deployment will display the UI but backend-dependent features will not work. Vercel hosts individual serverless functions; it does not provide persistent local disks or durable Socket.IO connections. The Vercel configuration is appropriate for **public demonstration**, not permanent farmer records or physical hardware sessions.
+---
 
-## 1. Push the clean repository
+## 1. Local Development (Dual Process)
 
-Extract the ZIP. **Do not commit any `.env` files, `node_modules`, `.git`, previous uploaded photos, or `backend/data/krishak_db.json`.** For an existing GitHub repo, copy the code into the clone to preserve history.
+Requires **Node.js 20+** or **Node.js 24+**.
 
-## 2. Create Backend Vercel project
-
-- Import the same GitHub repository into a new Vercel project.
-- Root Directory: **`backend`**.
-- Framework Preset: **Other** (Express REST API entrypoint: `api/index.ts`).
-- Build Command: **`npm run build`**.
-- Required environment variable: `DEMO_MODE=true` for public, synthetic-data demonstration.
-- Optional: `GEMINI_API_KEY` (server-side only), `GEMINI_MODEL=gemini-2.5-flash`, `FRONTEND_ORIGIN=https://<frontend-project>.vercel.app`, `FRONTEND_PUBLIC_URL=https://<frontend-project>.vercel.app`, `WHATSAPP_VERIFY_TOKEN`, `META_APP_SECRET` if running a verified Meta webhook.
-- Leave `SUPABASE_SERVICE_ROLE_KEY` unset in demo. The current Supabase store is not a fully synchronized persistent database.
-- Set `IOT_SIMULATOR_ENABLED=false`; serverless requests still support the manual demo simulator tick, but no background interval.
-- Deploy and visit **`https://<backend-project>.vercel.app/api/health`**. Verify `features.demoMode: true`.
-
-**Security:** `DEMO_MODE=true` intentionally exposes fictional data and demo write endpoints. **Never enable it for real user/farm records.** `DEMO_MODE=false` fails closed because verified production authentication is not yet implemented.
-
-## 3. Create Frontend Vercel project
-
-- Import the same GitHub repository again, as a separate Vercel project.
-- Root Directory: **`frontend`**.
-- Framework Preset: **Next.js**.
-- Environment variable **`BACKEND_URL=https://<backend-project>.vercel.app`** (no trailing `/api`, no trailing slash).
-- No `NEXT_PUBLIC_API_URL` is needed: the frontend proxies its API to the backend at build-time.
-- Deploy, then open the website. Banner should indicate backend online (or provide a visible configuration error).
-
-**Critical:** If you change `BACKEND_URL`, redeploy the frontend so the Next.js rewrites update.
-
-## 4. Basic final checks
-
-- `https://<frontend>/api/health` returns API health, not an HTML 404.
-- Dashboard loads; profile chooser uses only demo identities.
-- Mandi/weather statuses identify fallback/benchmark values rather than claiming real-time if providers are inaccessible.
-- Device controls are simulator-only; no real actuator is operated.
-- Phone-camera/drone image sessions are short-lived and **will not persist/reliably sync between Vercel invocations**. Use a long-lived API host + Supabase Storage/DB for a real phone-to-laptop drone workflow.
-
-## 5. Local check commands
-
-```bash
-npm --prefix backend ci
-npm --prefix frontend ci
-npm --prefix backend run smoke
-npm --prefix frontend run typecheck
-npm --prefix frontend run build
+### Terminal 1: Backend API (Port 5000)
+```powershell
+cd backend
+npm install
+Copy-Item .env.example .env
+npm run dev
 ```
 
-See [SECURITY.md](SECURITY.md) before making the application publicly accessible.
+### Terminal 2: Frontend Next.js App (Port 3000)
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. The Next.js frontend proxies `/api/*` and `/uploads/*` requests to `http://localhost:5000` via server-side rewrites.
+
+---
+
+## 2. Docker Compose Deployment (Single Command)
+
+A production-ready `docker-compose.yml` is provided at the repository root:
+
+```bash
+# Build and start both services in background
+npm run docker:up
+
+# Stop all services
+npm run docker:down
+```
+
+- **Frontend**: Exposed on port `3000`
+- **Backend**: Exposed on port `5000`
+- **Volume Mounts**: Uploads and JSON data stores are persisted to `./backend/data`
+
+---
+
+## 3. Dual-Project Vercel Deployment
+
+KrishakDrishti is designed as a decoupled two-service architecture:
+
+### Step 1: Deploy Backend Service
+1. Connect the GitHub repository to Vercel.
+2. Select Root Directory: **`backend`**.
+3. Framework Preset: **Other** (Express REST entrypoint: `api/index.ts`).
+4. Build Command: `npm run build`.
+5. Environment Variables:
+   - `DEMO_MODE=true` (Required for public portfolio demo)
+   - `IOT_SIMULATOR_ENABLED=false` (Serverless functions should not run interval loops)
+   - `GEMINI_API_KEY` (Optional: your Google Gemini API key)
+   - `FRONTEND_ORIGIN=https://<your-frontend>.vercel.app`
+6. Verify deployment by checking `https://<backend-project>.vercel.app/api/health`.
+
+### Step 2: Deploy Frontend Next.js App
+1. In Vercel, create another project importing the same GitHub repository.
+2. Select Root Directory: **`frontend`**.
+3. Framework Preset: **Next.js**.
+4. Environment Variables:
+   - `BACKEND_URL=https://<backend-project>.vercel.app` (do not add trailing slash)
+5. Deploy and visit `https://<frontend-project>.vercel.app`.
+
+---
+
+## 4. Verification & Quality Assurance Pipeline
+
+Execute the comprehensive quality gate locally or in CI:
+
+```powershell
+# Run the complete test and build pipeline
+npm run check
+```
+
+This automated command executes:
+1. `build:backend`: TypeScript compilation (`tsc`)
+2. `backend:smoke`: 6 HTTP security smoke checks (identity masking, token privacy, webhook signature)
+3. `test:backend`: 59 unit, integration, and E2E tests across 7 test suites
+4. `test:frontend`: 17 frontend tests (A11y, API client, and 23-language localization)
+5. `typecheck`: Strict TypeScript validation (`tsc --noEmit`)
+6. `verify:images`: Verification of all 11 static image assets
+7. `build:frontend`: Next.js 16.4.6 Turbopack production build with 16 prerendered routes

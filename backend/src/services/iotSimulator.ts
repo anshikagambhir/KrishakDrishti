@@ -13,6 +13,9 @@ export class IoTSimulator {
     this.intervalTimer = setInterval(() => {
       this.generateTick();
     }, intervalSeconds * 1000);
+    if (this.intervalTimer && typeof this.intervalTimer.unref === 'function') {
+      this.intervalTimer.unref();
+    }
   }
 
   public stop() {

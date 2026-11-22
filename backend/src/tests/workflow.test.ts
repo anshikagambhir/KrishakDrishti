@@ -1,11 +1,24 @@
-import { describe, it } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
+import { createTestServer, TestServerInstance } from './testServer.js';
 
-const API_BASE = 'http://localhost:5000';
+let API_BASE = 'http://localhost:5000';
+let testServerInstance: TestServerInstance | null = null;
 
 describe('Phase 3 Complete End-to-End Farmer Workflow Validation', () => {
+  before(async () => {
+    testServerInstance = await createTestServer();
+    API_BASE = testServerInstance.baseUrl;
+  });
+
+  after(async () => {
+    if (testServerInstance) {
+      await testServerInstance.close();
+    }
+  });
+
   let createdFarmerId = '';
   let authHeader = '';
   let createdFarmId = '';

@@ -16,10 +16,15 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci --prefix backend
       - run: npm --prefix backend run build
-      - name: Core unit tests (live provider credentials not required)
-        run: npm --prefix backend run test:unit
+      - name: Comprehensive backend test suite (unit, integration, security, e2e)
+        run: npm --prefix backend run test:all
         env:
-          VERCEL: '1'
+          DEMO_MODE: 'true'
+          IOT_SIMULATOR_ENABLED: 'false'
+          NODE_ENV: test
+      - name: Backend coverage report
+        run: npm --prefix backend run test:coverage
+        env:
           DEMO_MODE: 'true'
           IOT_SIMULATOR_ENABLED: 'false'
           NODE_ENV: test
@@ -35,6 +40,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefix frontend
+      - name: Frontend unit, a11y & localization tests
+        run: npm --prefix frontend run test
       - run: npm --prefix frontend run typecheck
       - run: npm --prefix frontend run build
         env:

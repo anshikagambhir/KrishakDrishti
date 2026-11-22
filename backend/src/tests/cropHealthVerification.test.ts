@@ -1,10 +1,12 @@
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
 import { store } from '../db/store.js';
+import { createTestServer, TestServerInstance } from './testServer.js';
 
-const API_BASE = 'http://localhost:5000';
+let API_BASE = 'http://localhost:5000';
+let testServerInstance: TestServerInstance | null = null;
 
 const VALID_JPEG_BYTES = Buffer.from([
   0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
@@ -20,6 +22,11 @@ const VALID_JPEG_BYTES = Buffer.from([
 ]);
 
 describe('Crop Health Comprehensive Verification Suite', () => {
+  before(async () => {
+    testServerInstance = await createTestServer();
+    API_BASE = testServerInstance.baseUrl;
+  });
+
   const createdTestIds: string[] = [];
   let createdDiagnosisId1 = '';
   let createdImageUrl1 = '';
@@ -203,6 +210,9 @@ describe('Crop Health Comprehensive Verification Suite', () => {
   after(async () => {
     for (const id of createdTestIds) {
       await fetch(`${API_BASE}/api/diagnoses/${id}`, { method: 'DELETE' }).catch(() => {});
+    }
+    if (testServerInstance) {
+      await testServerInstance.close();
     }
   });
 });

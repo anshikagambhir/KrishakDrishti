@@ -10,7 +10,7 @@ const router = Router();
 
 // Secure file upload configuration: max 10MB, strictly image MIME types
 const upload = multer({
-  limits: { fileSize: 2 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   storage: multer.memoryStorage(),
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
@@ -72,6 +72,19 @@ router.post('/diagnoses/analyze', upload.single('photo'), async (req: Request, r
     let imageUrl = 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80';
 
     if (req.file) {
+      // Byte signature (magic bytes) verification to prevent MIME-type spoofing
+      const buf = req.file.buffer;
+      const isJpeg = buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+      const isPng = buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+      const isWebp = buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+                     buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50;
+
+      if (!isJpeg && !isPng && !isWebp) {
+        return res.status(400).json({
+          error: 'Invalid file signature. Uploaded data does not match valid JPEG, PNG, or WebP magic bytes.',
+        });
+      }
+
       imageBase64 = req.file.buffer.toString('base64');
       mimeType = req.file.mimetype;
 
