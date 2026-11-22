@@ -1,0 +1,20 @@
+{
+  "name": "krishak-drishti-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend start",
+    "start:frontend": "npm --prefix frontend start",
+    "test:backend": "npm --prefix backend test",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "check": "npm run build:backend && npm --prefix backend run smoke && npm --prefix frontend run typecheck && npm run verify:images && npm run build:frontend",
+    "verify:images": "node scripts/verify-images.mjs"
+  }
+}

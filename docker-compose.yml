@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: krishak-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - FRONTEND_PORT=3000
+      - SUPABASE_URL=${SUPABASE_URL:-https://hhcwwsnabijwkxtyqqcz.supabase.co}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoY3d3c25hYmlqd2t4dHlxcWN6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjI2OTM3OSwiZXhwIjoyMTA3ODQ1Mzc5fQ.25zxwW96Tr6oNSu8lkph00_c9QNIgMORjtkajBSjnIg}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoY3d3c25hYmlqd2t4dHlxcWN6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjI2OTM3OSwiZXhwIjoyMTA3ODQ1Mzc5fQ.25zxwW96Tr6oNSu8lkph00_c9QNIgMORjtkajBSjnIg}
+      - SUPABASE_STORAGE_BUCKET=${SUPABASE_STORAGE_BUCKET:-crop-field-media}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - WEATHER_PROVIDER=${WEATHER_PROVIDER:-open-meteo}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-72d8365d2970cd9caaa7622c30f1153b}
+      - IOT_INGESTION_SECRET=${IOT_INGESTION_SECRET:-krishak_iot_secret_key_2026}
+      - IOT_SIMULATOR_ENABLED=${IOT_SIMULATOR_ENABLED:-true}
+    volumes:
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=
+    container_name: krishak-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BACKEND_URL=http://backend:5000
+    depends_on:
+      - backend
+
+volumes:
+  backend_data:
+
